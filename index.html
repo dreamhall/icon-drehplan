@@ -669,7 +669,7 @@ BUD_SECTIONS.forEach(function(s){BUD_ITEMS[s].de.forEach(function(_,i){budData[s
 
 // PERSISTENCE
 var LS_KEY="icon-drehplan-madrid";
-function saveState(){try{var d={checks:checks,eqS:eqS,crewN:crewN,notesV:notesV,lang:lang};if(!sb)d.shotImgs=shotImgs;localStorage.setItem(LS_KEY,JSON.stringify(d))}catch(e){}}
+function saveState(){try{var d={checks:checks,eqS:eqS,crewN:crewN,notesV:notesV,lang:lang,locScout:locScout,locScores:locScores,bkData:bkData,trData:trData,artData:artData,budData:budData};if(!sb)d.shotImgs=shotImgs;localStorage.setItem(LS_KEY,JSON.stringify(d))}catch(e){}}
 function loadState(){try{var r=localStorage.getItem(LS_KEY);if(!r)return;var s=JSON.parse(r);if(s.checks)Object.assign(checks,s.checks);if(s.eqS)Object.assign(eqS,s.eqS);if(s.crewN)Object.assign(crewN,s.crewN);if(s.notesV)Object.assign(notesV,s.notesV);if(s.shotImgs)Object.assign(shotImgs,s.shotImgs);if(s.locScout)locScout=s.locScout;if(s.locScores)locScores=s.locScores;if(s.bkData)Object.assign(bkData,s.bkData);if(s.trData)Object.assign(trData,s.trData);if(s.artData)artData=s.artData;if(s.budData)Object.assign(budData,s.budData);if(s.lang){lang=s.lang;document.querySelectorAll(".lbtn").forEach(function(b){if(b.textContent.trim()===lang.toUpperCase())b.classList.add("on");else if(["DE","ES","EN"].indexOf(b.textContent.trim())>=0)b.classList.remove("on")})}}catch(e){}}
 function resetAll(){if(confirm("Reset all data?")){localStorage.removeItem(LS_KEY);location.reload()}}
 loadState();
@@ -924,7 +924,7 @@ function renderFolderTree(){
 }
 
 function scrollToSec(e,id){e.preventDefault();var el=document.getElementById(id);if(!el)return;var nh=document.getElementById("mainNav").offsetHeight||40;window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-nh-10,behavior:"smooth"})}
-window.addEventListener("scroll",function(){var links=document.querySelectorAll(".nav a");var nh=document.getElementById("mainNav").offsetHeight||40;var cur="";var ids=["visionBlock","s-tl","s-eq","s-sh","s-cr","s-ck","s-nt","s-cp","s-fd","s-gs"];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&el.getBoundingClientRect().top<nh+60)cur=ids[i]}links.forEach(function(a){a.classList.toggle("active",a.getAttribute("href")==="#"+cur)})});
+window.addEventListener("scroll",function(){var links=document.querySelectorAll(".nav a");var nh=document.getElementById("mainNav").offsetHeight||40;var cur="";var ids=["visionBlock","s-tl","s-eq","s-sh","s-cr","s-ck","s-nt","s-cp","s-fd"];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el&&el.getBoundingClientRect().top<nh+60)cur=ids[i]}links.forEach(function(a){a.classList.toggle("active",a.getAttribute("href")==="#"+cur)})});
 
 function restoreInputs(){for(var i=0;i<CR.length;i++){var el=document.getElementById("cn-"+i);if(el&&crewN[i])el.value=crewN[i]}var n=document.getElementById("notes");if(n&&notesV.madrid)n.value=notesV.madrid}
 
@@ -969,8 +969,7 @@ function render(){
     {id:'s-ck',l:{de:'Checklisten',es:'Checklists',en:'Checklists'}},
     {id:'s-nt',l:{de:'Notizen',es:'Notas',en:'Notes'}},
     {id:'s-cp',l:{de:'Kamera-Positionen',es:'Posiciones Camara',en:'Camera Positions'}},
-    {id:'s-fd',l:{de:'Ordnerstruktur',es:'Estructura',en:'Folder Structure'}},
-    {id:'s-gs',l:{de:'Google Sheet',es:'Google Sheet',en:'Google Sheet'}}
+    {id:'s-fd',l:{de:'Ordnerstruktur',es:'Estructura',en:'Folder Structure'}}
   ];
   var nh='';
   for(var ni=0;ni<navItems.length;ni++){
@@ -1231,33 +1230,6 @@ function render(){
   }
   m+='</div>';
   m+=renderFolderTree();
-  m+='</div></div>';
-
-  // Google Sheet
-  m+='<div class="sec" id="s-gs"><div class="sec-hd" data-sec="s-gs" onclick="togSec(this.dataset.sec)">';
-  m+='<h2>Google Sheet</h2><span class="tgl">&#9660;</span></div>';
-  m+='<div class="sec-bd">';
-  var gsRaw=localStorage.getItem('icon-gs-url')||'';
-  if(gsRaw){
-    var sheetUrl=gsRaw;
-    if(sheetUrl.indexOf('<iframe')>=0){var m2=sheetUrl.match(/src="([^"]+)"/);if(m2)sheetUrl=m2[1];}
-    var id=sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if(id)sheetUrl='https://docs.google.com/spreadsheets/d/'+id[1]+'/edit';
-    m+='<div style="display:flex;flex-direction:column;align-items:center;padding:30px 20px;gap:16px">';
-    m+='<div style="font-size:2.5rem">&#128196;</div>';
-    m+='<a href="'+sheetUrl+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;padding:14px 32px;background:var(--gold);color:#000;border-radius:8px;font-weight:700;font-size:.85rem;text-decoration:none;font-family:Oswald;letter-spacing:.5px;text-transform:uppercase;transition:opacity .15s">&#x2197; Google Sheet oeffnen</a>';
-    m+='<div style="font-size:.6rem;color:var(--dm)">Oeffnet in neuem Tab</div>';
-    m+='<button onclick="localStorage.removeItem(&#39;icon-gs-url&#39;);render()" style="font-size:.6rem;padding:4px 10px;background:transparent;color:var(--ft);border:1px solid var(--bd);border-radius:4px;cursor:pointer;font-family:Montserrat;margin-top:8px">Link aendern</button>';
-    m+='</div>';
-  }else{
-    m+='<div style="text-align:center;padding:40px 20px">';
-    m+='<div style="font-size:2rem;margin-bottom:12px">&#128196;</div>';
-    m+='<div style="font-size:.8rem;color:var(--tx);margin-bottom:6px">Google Sheet verknuepfen</div>';
-    m+='<div style="font-size:.65rem;color:var(--dm);margin-bottom:16px">Fuege den Link zu deinem Google Sheet ein</div>';
-    m+='<input type="text" id="gsInput" placeholder="https://docs.google.com/spreadsheets/d/..." style="width:100%;max-width:500px;padding:10px 14px;border:1px solid var(--bd);border-radius:6px;background:var(--s2);color:var(--tx);font-size:.72rem;font-family:Montserrat">';
-    m+='<br><button onclick="var u=document.getElementById(&#39;gsInput&#39;).value.trim();if(u){localStorage.setItem(&#39;icon-gs-url&#39;,u);render()}" style="margin-top:10px;padding:8px 24px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:600;font-size:.72rem;cursor:pointer;font-family:Montserrat">Verknuepfen</button>';
-    m+='</div>';
-  }
   m+='</div></div>';
 
   document.getElementById('mainContent').innerHTML=m;
