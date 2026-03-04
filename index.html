@@ -199,6 +199,7 @@ iframe{color-scheme:light}
 @media(max-width:768px){.hdr,.vision,.main{padding-left:16px;padding-right:16px}.vis-grid{grid-template-columns:1fr}.srow{grid-template-columns:36px 1fr}.stype,.srow>span:last-child{display:none}.tl-row{grid-template-columns:72px 1fr}.ibar{flex-direction:column}}
 
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
@@ -640,10 +641,33 @@ BUD_SECTIONS.forEach(function(s){BUD_ITEMS[s].de.forEach(function(_,i){budData[s
 
 // PERSISTENCE
 var LS_KEY="icon-drehplan-madrid";
-function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify({checks:checks,eqS:eqS,crewN:crewN,notesV:notesV,shotImgs:shotImgs,lang:lang}))}catch(e){}}
+function saveState(){try{var d={checks:checks,eqS:eqS,crewN:crewN,notesV:notesV,lang:lang};if(!sb)d.shotImgs=shotImgs;localStorage.setItem(LS_KEY,JSON.stringify(d))}catch(e){}}
 function loadState(){try{var r=localStorage.getItem(LS_KEY);if(!r)return;var s=JSON.parse(r);if(s.checks)Object.assign(checks,s.checks);if(s.eqS)Object.assign(eqS,s.eqS);if(s.crewN)Object.assign(crewN,s.crewN);if(s.notesV)Object.assign(notesV,s.notesV);if(s.shotImgs)Object.assign(shotImgs,s.shotImgs);if(s.locScout)locScout=s.locScout;if(s.locScores)locScores=s.locScores;if(s.bkData)Object.assign(bkData,s.bkData);if(s.trData)Object.assign(trData,s.trData);if(s.artData)artData=s.artData;if(s.budData)Object.assign(budData,s.budData);if(s.lang){lang=s.lang;document.querySelectorAll(".lbtn").forEach(function(b){if(b.textContent.trim()===lang.toUpperCase())b.classList.add("on");else if(["DE","ES","EN"].indexOf(b.textContent.trim())>=0)b.classList.remove("on")})}}catch(e){}}
 function resetAll(){if(confirm("Reset all data?")){localStorage.removeItem(LS_KEY);location.reload()}}
 loadState();
+
+// ═══ SUPABASE STORAGE ═══
+var SB_URL="https://dntthimrvneyopkbhzhe.supabase.co";
+var SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRudHRoaW1ydm5leW9wa2JoemhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDU5NDgsImV4cCI6MjA4NzA4MTk0OH0.BumHPOLTEJaG66hSnEGp6Ay8Tr2nfj43DscTLeSKO0Y";
+var SB_BUCKET="icon-uploads";
+var sb=null;
+try{sb=supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn("Supabase not available",e)}
+
+// Load images from Supabase on start
+async function loadCloudImages(){
+  if(!sb)return;
+  try{
+    var{data}=await sb.from("icon_shot_images").select("*").order("created_at",{ascending:true});
+    if(!data)return;
+    shotImgs={};
+    data.forEach(function(row){
+      if(!shotImgs[row.shot_key])shotImgs[row.shot_key]=[];
+      shotImgs[row.shot_key].push({url:row.url,id:row.id});
+    });
+    render();
+  }catch(e){console.warn("Cloud load failed",e)}
+}
+loadCloudImages();
 
 // FUNCTIONS
 function setLang(btn,l){lang=l;document.querySelectorAll(".lang-bar .lbtn").forEach(function(b){b.classList.remove("on")});btn.classList.add("on");saveState();render()}
@@ -663,12 +687,28 @@ function eqCounts(){var o=0,r=0,tb=0;for(var k in eqS){if(eqS[k]==="owned")o++;e
 
 function addShotImg(cat,si,input){
   if(!input.files||!input.files[0])return;
-  var k=cat+"-"+si;if(!shotImgs[k])shotImgs[k]=[];
-  var rd=new FileReader();
-  rd.onload=function(e){shotImgs[k].push(e.target.result);saveState();render()};
-  rd.readAsDataURL(input.files[0]);
+  var file=input.files[0];
+  var k=cat+"-"+si;
+  if(!shotImgs[k])shotImgs[k]=[];
+  if(sb){
+    // Upload to Supabase Storage
+    var fname="shots/"+k+"/"+Date.now()+"_"+file.name.replace(/[^a-zA-Z0-9._-]/g,"");
+    sb.storage.from(SB_BUCKET).upload(fname,file,{upsert:true}).then(function(res){
+      if(res.error){console.error("Upload error",res.error);fallbackLocal(k,file);return}
+      var url=SB_URL+"/storage/v1/object/public/"+SB_BUCKET+"/"+fname;
+      // Save reference in DB
+      sb.from("icon_shot_images").insert({shot_key:k,url:url,filename:fname}).select().single().then(function(dbRes){
+        shotImgs[k].push({url:url,id:dbRes.data?dbRes.data.id:null});
+        render();
+      });
+    });
+  }else{fallbackLocal(k,file)}
 }
-function delShotImg(cat,si,ii){var k=cat+"-"+si;if(shotImgs[k]){shotImgs[k].splice(ii,1);saveState();render()}}
+function fallbackLocal(k,file){
+  var rd=new FileReader();
+  rd.onload=function(e){shotImgs[k].push({url:e.target.result,id:null});saveState();render()};
+  rd.readAsDataURL(file);
+}function delShotImg(cat,si,ii){var k=cat+"-"+si;if(!shotImgs[k])return;var img=shotImgs[k][ii];if(sb&&img&&img.id){sb.from("icon_shot_images").delete().eq("id",img.id).then(function(){});if(img.url&&img.url.indexOf(SB_BUCKET)>=0){var parts=img.url.split("/"+SB_BUCKET+"/");if(parts[1])sb.storage.from(SB_BUCKET).remove([parts[1]])}}shotImgs[k].splice(ii,1);saveState();render()}
 
 function saveLocScout(i,field,val){locScout[i][field]=val;saveState()}
 function saveLocScore(k,val){locScores[k]=val;saveState()}
@@ -698,7 +738,7 @@ function renderShotItems(catKey,cat){
       var imgs=shotImgs[key]||[];
       h+='<div class="shot-imgs">';
       for(var ii=0;ii<imgs.length;ii++){
-        h+='<div class="shot-img-wrap"><img src="'+imgs[ii]+'">'
+        h+='<div class="shot-img-wrap"><img src="'+(imgs[ii].url||imgs[ii])+'">'
           +'<button class="del-img" data-cat="'+catKey+'" data-si="'+si+'" data-ii="'+ii+'" onclick="delShotImg(this.dataset.cat,+this.dataset.si,+this.dataset.ii)">x</button></div>';
       }
       h+='<label class="shot-upload">'
