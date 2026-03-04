@@ -1193,10 +1193,43 @@ function render(){
   m+='<div class="sec" id="s-fd"><div class="sec-hd" data-sec="s-fd" onclick="togSec(this.dataset.sec)">';
   m+='<h2>'+{de:'\ud83d\udcc1 Google Drive \u2014 Ordnerstruktur',es:'\ud83d\udcc1 Google Drive \u2014 Estructura',en:'\ud83d\udcc1 Google Drive \u2014 Folder Structure'}[lang]+'</h2>';
   m+='<span class="badge bg">8 Phasen</span><span class="tgl">&#9660;</span></div><div class="sec-bd">';
-  m+='<div style="font-size:.62rem;color:var(--dm);margin-bottom:16px;padding:10px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:6px">'
-    +{de:'Google Drive Ordnerstruktur f\u00fcr das gesamte Projekt. Klicke auf Ordner zum Auf-/Zuklappen.',
-       es:'Estructura de carpetas de Google Drive para el proyecto. Haz clic para expandir/colapsar.',
-       en:'Google Drive folder structure for the entire project. Click folders to expand/collapse.'}[lang]+'</div>';
+  // Drive Links
+  var driveDE=localStorage.getItem('icon-drive-de')||'';
+  var driveES=localStorage.getItem('icon-drive-es')||'';
+  m+='<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">';
+  // DE Drive
+  if(driveDE){
+    m+='<div style="flex:1;min-width:200px;padding:12px 16px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;display:flex;align-items:center;gap:10px">';
+    m+='<span style="font-size:1.1rem">\ud83c\udde9\ud83c\uddea</span>';
+    m+='<div style="flex:1;min-width:0"><div style="font-family:Oswald;font-size:.7rem;font-weight:600;color:var(--tx)">Google Drive DE</div>';
+    m+='<div style="font-size:.55rem;color:var(--ft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+driveDE+'</div></div>';
+    m+='<a href="'+driveDE+'" target="_blank" rel="noopener" style="padding:6px 14px;background:var(--gold);color:#000;border-radius:5px;font-size:.6rem;font-weight:700;font-family:Oswald;text-decoration:none;letter-spacing:.5px">\u2197 \u00d6ffnen</a>';
+    m+='<button onclick="localStorage.removeItem(\'icon-drive-de\');render()" style="padding:4px 8px;background:transparent;color:var(--ft);border:1px solid var(--bd);border-radius:4px;cursor:pointer;font-size:.55rem;font-family:Montserrat">\u00d7</button>';
+    m+='</div>';
+  }else{
+    m+='<div style="flex:1;min-width:200px;padding:12px 16px;background:var(--s2);border:1px dashed var(--bd);border-radius:8px">';
+    m+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:1rem">\ud83c\udde9\ud83c\uddea</span><span style="font-family:Oswald;font-size:.7rem;font-weight:600">Google Drive DE</span></div>';
+    m+='<div style="display:flex;gap:6px"><input type="text" id="driveDE" placeholder="https://drive.google.com/..." style="flex:1;padding:6px 10px;border:1px solid var(--bd);border-radius:5px;background:var(--s3);color:var(--tx);font-size:.6rem;font-family:Montserrat">';
+    m+='<button onclick="var v=document.getElementById(\'driveDE\').value.trim();if(v){localStorage.setItem(\'icon-drive-de\',v);render()}" style="padding:6px 12px;background:var(--gold);color:#000;border:none;border-radius:5px;font-size:.6rem;font-weight:600;cursor:pointer;font-family:Montserrat;white-space:nowrap">Speichern</button></div>';
+    m+='</div>';
+  }
+  // ES Drive
+  if(driveES){
+    m+='<div style="flex:1;min-width:200px;padding:12px 16px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;display:flex;align-items:center;gap:10px">';
+    m+='<span style="font-size:1.1rem">\ud83c\uddea\ud83c\uddf8</span>';
+    m+='<div style="flex:1;min-width:0"><div style="font-family:Oswald;font-size:.7rem;font-weight:600;color:var(--tx)">Google Drive ES</div>';
+    m+='<div style="font-size:.55rem;color:var(--ft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+driveES+'</div></div>';
+    m+='<a href="'+driveES+'" target="_blank" rel="noopener" style="padding:6px 14px;background:var(--gold);color:#000;border-radius:5px;font-size:.6rem;font-weight:700;font-family:Oswald;text-decoration:none;letter-spacing:.5px">\u2197 Abrir</a>';
+    m+='<button onclick="localStorage.removeItem(\'icon-drive-es\');render()" style="padding:4px 8px;background:transparent;color:var(--ft);border:1px solid var(--bd);border-radius:4px;cursor:pointer;font-size:.55rem;font-family:Montserrat">\u00d7</button>';
+    m+='</div>';
+  }else{
+    m+='<div style="flex:1;min-width:200px;padding:12px 16px;background:var(--s2);border:1px dashed var(--bd);border-radius:8px">';
+    m+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:1rem">\ud83c\uddea\ud83c\uddf8</span><span style="font-family:Oswald;font-size:.7rem;font-weight:600">Google Drive ES</span></div>';
+    m+='<div style="display:flex;gap:6px"><input type="text" id="driveES" placeholder="https://drive.google.com/..." style="flex:1;padding:6px 10px;border:1px solid var(--bd);border-radius:5px;background:var(--s3);color:var(--tx);font-size:.6rem;font-family:Montserrat">';
+    m+='<button onclick="var v=document.getElementById(\'driveES\').value.trim();if(v){localStorage.setItem(\'icon-drive-es\',v);render()}" style="padding:6px 12px;background:var(--gold);color:#000;border:none;border-radius:5px;font-size:.6rem;font-weight:600;cursor:pointer;font-family:Montserrat;white-space:nowrap">Guardar</button></div>';
+    m+='</div>';
+  }
+  m+='</div>';
   m+=renderFolderTree();
   m+='</div></div>';
 
