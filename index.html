@@ -651,7 +651,7 @@ var SB_URL="https://dcaiwpsxhwxxjodtpnmv.supabase.co";
 var SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYWl3cHN4aHd4eGpvZHRwbm12Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NDY1ODAsImV4cCI6MjA4ODIyMjU4MH0.erLNsH8LLuY1p02kwiRb7cCs3yk573bOsyhq0h8dckI";
 var SB_BUCKET="icon-uploads";
 var sb=null;
-try{sb=supabase.createClient(SB_URL,SB_KEY)}catch(e){console.warn("Supabase not available",e)}
+try{sb=supabase.createClient(SB_URL,SB_KEY);console.log("Supabase connected:",!!sb)}catch(e){console.warn("Supabase not available",e)}
 
 // Load images from Supabase on start
 async function loadCloudImages(){
@@ -692,8 +692,10 @@ function addShotImg(cat,si,input){
   if(!shotImgs[k])shotImgs[k]=[];
   if(sb){
     // Upload to Supabase Storage
+    console.log("Uploading to Supabase...",k,file.name,file.size);
     var fname="shots/"+k+"/"+Date.now()+"_"+file.name.replace(/[^a-zA-Z0-9._-]/g,"");
     sb.storage.from(SB_BUCKET).upload(fname,file,{upsert:true}).then(function(res){
+      console.log("Upload response:",JSON.stringify(res));
       if(res.error){console.error("Upload error",res.error);fallbackLocal(k,file);return}
       var url=SB_URL+"/storage/v1/object/public/"+SB_BUCKET+"/"+fname;
       // Save reference in DB
@@ -733,20 +735,18 @@ function renderShotItems(catKey,cat){
       +'<span class="stype">'+s.type[lang]+'</span>'
       +'<span style="font-size:.52rem"><span class="ctag c-cam">'+s.cam+'</span></span>'
       +'</div>';
-    if(catKey==='performance'){
-      var key=catKey+'-'+si;
-      var imgs=shotImgs[key]||[];
-      h+='<div class="shot-imgs">';
-      for(var ii=0;ii<imgs.length;ii++){
-        h+='<div class="shot-img-wrap"><img src="'+(imgs[ii].url||imgs[ii])+'">'
-          +'<button class="del-img" data-cat="'+catKey+'" data-si="'+si+'" data-ii="'+ii+'" onclick="delShotImg(this.dataset.cat,+this.dataset.si,+this.dataset.ii)">x</button></div>';
-      }
-      h+='<label class="shot-upload">'
-        +'<span style="font-size:1rem;color:var(--ft)">+</span>'
-        +'<span>'+ul[lang]+'</span>'
-        +'<input type="file" accept="image/*" data-cat="'+catKey+'" data-si="'+si+'" onchange="addShotImg(this.dataset.cat,+this.dataset.si,this)">'
-        +'</label></div>';
+    var key=catKey+'-'+si;
+    var imgs=shotImgs[key]||[];
+    h+='<div class="shot-imgs">';
+    for(var ii=0;ii<imgs.length;ii++){
+      h+='<div class="shot-img-wrap"><img src="'+(imgs[ii].url||imgs[ii])+'">'
+        +'<button class="del-img" data-cat="'+catKey+'" data-si="'+si+'" data-ii="'+ii+'" onclick="delShotImg(this.dataset.cat,+this.dataset.si,+this.dataset.ii)">x</button></div>';
     }
+    h+='<label class="shot-upload">'
+      +'<span style="font-size:1rem;color:var(--ft)">+</span>'
+      +'<span>'+ul[lang]+'</span>'
+      +'<input type="file" accept="image/*" data-cat="'+catKey+'" data-si="'+si+'" onchange="addShotImg(this.dataset.cat,+this.dataset.si,this)">'
+      +'</label></div>';
   }
   return h;
 }
